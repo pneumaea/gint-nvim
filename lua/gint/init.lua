@@ -1,18 +1,26 @@
+local modules = {
+  status = require("plugin.status"),
+  commit = require("plugin.commit")
+}
+
 local M = {}
 
-function test()
-  vim.notify("This is a test")
-end
-
 function M.setup(opts)
-  opts = opts or {}
+  opts = {
+    default = opts.default or {},
+    status = opts.status or {},
+    commit = opts.commit or {}
+  }
 
-  local keymap = opts.keymap or "<leader>hw"
+  for table, opt in pairs(opts) do
+    if opt.enable ~= false then
+      if table == "default" then goto continue end
 
-  vim.keymap.set("n", keymap, M.test, {
-    desc = "Test Command",
-    silent = true
-  })
+      modules[table].setup(opts)
+
+      ::continue::
+    end
+  end
 end
 
 return M
