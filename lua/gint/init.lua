@@ -2,15 +2,12 @@ local modules = {
   status = require("plugin.status"),
   commit = require("plugin.commit")
 }
+local args = require("utils.args")
 
 local M = {}
 
 function M.setup(opts)
-  opts = {
-    default = opts.default or {},
-    status = opts.status or {},
-    commit = opts.commit or {}
-  }
+  opts = args.verify(opts)
 
   for table, opt in pairs(opts) do
     if opt.enable ~= false then
