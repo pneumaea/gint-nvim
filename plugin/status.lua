@@ -79,11 +79,13 @@ local function setup(opts)
     opts.status or {}
   )
 
-  vim.api.nvim_create_user_command('GitStatus', git_status_float, {})
+  if opts.enable ~= false then
+    vim.api.nvim_create_user_command('GitStatus', git_status_float, {})
 
-  vim.keymap.set("n", "<leader>gs", function()
-    git_status_float(cmd_opts or {})
-  end, {})
+    vim.keymap.set("n", "<leader>gs", function()
+      git_status_float(cmd_opts or {})
+    end, {})
+  end
 end
 
 M.setup = setup
