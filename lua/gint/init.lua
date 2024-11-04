@@ -6,6 +6,8 @@ local args = require("utils.args")
 
 local M = {}
 
+M.modules = modules
+
 function M.setup(opts)
   opts = args.verify(opts)
 
