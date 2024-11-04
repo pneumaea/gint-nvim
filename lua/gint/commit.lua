@@ -202,7 +202,6 @@ function M.setup(opts)
 
   if opts.enable ~= false then
     vim.api.nvim_create_user_command('GintCommit', function()
-      vim.notify(type(opts))
       M.commit(cmd_opts or {})
     end, {})
   end
