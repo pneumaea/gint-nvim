@@ -77,7 +77,7 @@ local function attach_keymaps(buf, opts)
     silent = true,
     callback = function()
       vim.cmd('q!')
-      require("gint").modules.commit.commit()
+      require("gint.commit").commit()
     end
   })
 
@@ -86,10 +86,10 @@ local function attach_keymaps(buf, opts)
     return
   end
 
-  vim.api.nvim_buf_set_keymap(buf, 'n', 'i', ':lua require("gint").modules.status.stage_line()<CR>',
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'i', ':lua require("gint.status").stage_line()<CR>',
     { noremap = true, silent = true })
 
-  vim.api.nvim_buf_set_keymap(buf, 'n', 'x', ':lua require("gint").modules.status.unstage_line()<CR>',
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'x', ':lua require("gint.status").unstage_line()<CR>',
     { noremap = true, silent = true })
 end
 

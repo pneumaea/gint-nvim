@@ -1,6 +1,6 @@
 local modules = {
-  status = require("plugin.status"),
-  commit = require("plugin.commit")
+  status = require("gint.status"),
+  commit = require("gint.commit")
 }
 local args = require("utils.args")
 
