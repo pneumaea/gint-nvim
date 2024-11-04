@@ -64,7 +64,7 @@ local function parse_git_status(status)
   return lines
 end
 
-local function open_floating_commit_window(callback)
+local function open_floating_commit_window(callback, opts)
   local buf_commit = vim.api.nvim_create_buf(false, true)
   local buf_status = vim.api.nvim_create_buf(false, true)
 
@@ -86,14 +86,14 @@ local function open_floating_commit_window(callback)
 
   -- Options for the commit message window
   local opts_commit = {
-    title = ' Commit message ',
-    title_pos = "center",
-    relative = 'editor',
-    width = width,
-    height = height_commit,
+    title = opts.title or ' Commit message ',
+    border = opts.border or 'rounded',
+    title_pos = opts.title_pos or "center",
+    relative = opts.relative or 'editor',
+    width = opts.width or width,
     row = row_commit,
     col = col_commit,
-    border = 'rounded',
+    height = height_commit,
   }
 
   -- Populate the second buffer with changed files
@@ -112,14 +112,14 @@ local function open_floating_commit_window(callback)
   -- Options for the status window
   local opts_status = {
     title = ' Changed files ',
-    title_pos = "center",
-    relative = 'editor',
+    title_pos = opts.title_pos or "center",
+    relative = opts.relative or 'editor',
     width = width,
-    style = "minimal",
+    style = opts.style or "minimal",
     height = #changed_files > 0 and #changed_files or height_status,
     row = row_status,
     col = col_commit,
-    border = 'rounded',
+    border = opts.border or 'rounded',
   }
 
   -- Open the changed files window
@@ -134,7 +134,9 @@ local function open_floating_commit_window(callback)
 
   vim.cmd('startinsert')
 
-  vim.api.nvim_buf_set_keymap(buf_commit, 'n', '<Esc>', ':q!<CR>', { noremap = true, silent = true })
+  if opts.exit_on_esc ~= false then
+    vim.api.nvim_buf_set_keymap(buf_commit, 'n', '<Esc>', ':q!<CR>', { noremap = true, silent = true })
+  end
 
   vim.api.nvim_create_autocmd("BufWinLeave", {
     buffer = buf_commit,
@@ -167,7 +169,7 @@ function M.commit(opts)
     return
   end
 
-  open_floating_commit_window(function(commit_message)
+  local callback = function(commit_message)
     if commit_message == "" then
       vim.notify("Commit message is empty, aborting", vim.log.levels.WARN)
       return
@@ -187,17 +189,20 @@ function M.commit(opts)
     vim.cmd("Git commit -F " .. temp_file)
 
     os.remove(temp_file)
-  end)
+  end
+
+  open_floating_commit_window(callback, opts)
 end
 
 function M.setup(opts)
   local cmd_opts = tables.merge_tables(
     opts.default or {},
-    opts.status or {}
+    opts.commit or {}
   )
 
   if opts.enable ~= false then
     vim.api.nvim_create_user_command('GintCommit', function()
+      vim.notify(type(opts))
       M.commit(cmd_opts or {})
     end, {})
   end
