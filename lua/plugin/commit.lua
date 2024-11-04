@@ -1,17 +1,10 @@
 local tables = require("utils.tables")
+local git_utils = require("utils.git")
 
 local M = {}
 
 local function starts_with(str, start)
   return str:sub(1, #start) == start
-end
-
-local function needs_linebreak(line)
-  local is_start_of_body = starts_with(line, "Changes")
-  local is_end_of_body = starts_with(line, "Summary")
-  local is_start_of_footer = starts_with(line, "no changes")
-
-  return is_start_of_body or is_end_of_body or is_start_of_footer
 end
 
 local function trim(str)
@@ -28,7 +21,7 @@ local function get_git_status()
 
   local lines = {}
   for line in output:gmatch("[^\r\n]+") do
-    if needs_linebreak(line) then
+    if git_utils.needs_linebreak(line) then
       table.insert(lines, "")
     end
 
@@ -141,7 +134,7 @@ local function open_floating_commit_window(callback)
 
   vim.cmd('startinsert')
 
-  vim.api.nvim_buf_set_keymap(buf_commit, 'n', '<Esc>', ':bd!<CR>', { noremap = true, silent = true })
+  vim.api.nvim_buf_set_keymap(buf_commit, 'n', '<Esc>', ':q!<CR>', { noremap = true, silent = true })
 
   vim.api.nvim_create_autocmd("BufWinLeave", {
     buffer = buf_commit,
@@ -168,10 +161,15 @@ local function is_stage_empty()
   return staged_changes == ""
 end
 
-local function commit()
+function M.commit(opts)
+  if is_stage_empty() then
+    vim.notify("No staged changes to commit", vim.log.levels.INFO)
+    return
+  end
+
   open_floating_commit_window(function(commit_message)
     if commit_message == "" then
-      vim.notify("Commit message is empty", vim.log.levels.WARN)
+      vim.notify("Commit message is empty, aborting", vim.log.levels.WARN)
       return
     end
 
@@ -192,22 +190,15 @@ local function commit()
   end)
 end
 
-local function setup(opts)
+function M.setup(opts)
   local cmd_opts = tables.merge_tables(
     opts.default or {},
     opts.status or {}
   )
 
   vim.keymap.set("n", "<leader>gc", function()
-    if is_stage_empty() then
-      vim.notify("No staged changes to commit", vim.log.levels.INFO)
-      return
-    end
-
-    commit(cmd_opts or {})
+    M.commit(cmd_opts or {})
   end)
 end
-
-M.setup = setup
 
 return M
