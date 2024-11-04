@@ -77,7 +77,7 @@ local function attach_keymaps(buf, opts)
     silent = true,
     callback = function()
       vim.cmd('q!')
-      require("gint.commit").commit()
+      vim.cmd('GintCommit')
     end
   })
 
