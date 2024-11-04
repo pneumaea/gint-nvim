@@ -196,9 +196,11 @@ function M.setup(opts)
     opts.status or {}
   )
 
-  vim.keymap.set("n", "<leader>gc", function()
-    M.commit(cmd_opts or {})
-  end)
+  if opts.enable ~= false then
+    vim.api.nvim_create_user_command('GintCommit', function()
+      M.commit(cmd_opts or {})
+    end, {})
+  end
 end
 
 return M

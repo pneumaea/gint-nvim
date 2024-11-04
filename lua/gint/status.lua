@@ -129,21 +129,17 @@ local function git_status_float(opts)
   attach_keymaps(buf, opts)
 end
 
-local function setup(opts)
+function M.setup(opts)
   local cmd_opts = tables.merge_tables(
     opts.default or {},
     opts.status or {}
   )
 
   if opts.enable ~= false then
-    vim.api.nvim_create_user_command('GitStatus', git_status_float, {})
-
-    vim.keymap.set("n", "<leader>gs", function()
-      git_status_float(cmd_opts or {})
+    vim.api.nvim_create_user_command('GintStatus', function()
+      git_status_float(cmd_opts)
     end, {})
   end
 end
-
-M.setup = setup
 
 return M
