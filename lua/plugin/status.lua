@@ -1,18 +1,9 @@
 local tables = require("utils.tables")
+local nvim_utils = require("utils.nvim")
+local file_utils = require("utils.files")
+local git_utils = require("utils.git")
 
 local M = {}
-
-local function starts_with(str, start)
-  return str:sub(1, #start) == start
-end
-
-local function needs_linebreak(line)
-  local is_start_of_body = starts_with(line, "Changes")
-  local is_end_of_body = starts_with(line, "Summary")
-  local is_start_of_footer = starts_with(line, "no changes")
-
-  return is_start_of_body or is_end_of_body or is_start_of_footer
-end
 
 local function get_git_status()
   local output = vim.fn.system("git status")
@@ -24,7 +15,7 @@ local function get_git_status()
 
   local lines = {}
   for line in output:gmatch("[^\r\n]+") do
-    if needs_linebreak(line) then
+    if git_utils.needs_linebreak(line) then
       table.insert(lines, "")
     end
 
@@ -32,6 +23,74 @@ local function get_git_status()
   end
 
   return lines
+end
+
+function M.stage_line()
+  local line = nvim_utils.get_current_line()
+
+  local file_name = file_utils.get_file_name(line)
+  if file_name == nil then
+    return
+  end
+
+  local output = vim.fn.system("git add " .. file_name)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Error running git add: " .. output, vim.log.levels.ERROR)
+    return
+  end
+
+  local buf = vim.api.nvim_get_current_buf()
+  local status_lines = get_git_status()
+  if status_lines then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, status_lines)
+  end
+end
+
+function M.unstage_line()
+  local line = nvim_utils.get_current_line()
+
+  local file_name = file_utils.get_file_name(line)
+  if file_name == nil then
+    return
+  end
+
+  local output = vim.fn.system("git reset " .. file_name)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Error running git reset: " .. output, vim.log.levels.ERROR)
+    return
+  end
+
+  local buf = vim.api.nvim_get_current_buf()
+  local status_lines = get_git_status()
+  if status_lines then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, status_lines)
+  end
+end
+
+local function attach_keymaps(buf, opts)
+  if opts.exit_on_esc ~= false then
+    vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', ':q!<CR>', { noremap = true, silent = true })
+  end
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'c', '', {
+    noremap = true,
+    silent = true,
+    callback = function()
+      vim.cmd('q!')
+      require("gint").modules.commit.commit()
+    end
+  })
+
+
+  if opts.no_remap == true then
+    return
+  end
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'i', ':lua require("gint").modules.status.stage_line()<CR>',
+    { noremap = true, silent = true })
+
+  vim.api.nvim_buf_set_keymap(buf, 'n', 'x', ':lua require("gint").modules.status.unstage_line()<CR>',
+    { noremap = true, silent = true })
 end
 
 local function git_status_float(opts)
@@ -64,13 +123,10 @@ local function git_status_float(opts)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, status_lines)
   end
 
-  vim.bo[buf].readonly = true
-  vim.bo[buf].modifiable = false
+  -- vim.bo[buf].readonly = true
+  vim.bo[buf].modifiable = true
 
-  -- either true or default will enable this keymap
-  if opts.exit_on_esc ~= false then
-    vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', ':bd!<CR>', { noremap = true, silent = true })
-  end
+  attach_keymaps(buf, opts)
 end
 
 local function setup(opts)
