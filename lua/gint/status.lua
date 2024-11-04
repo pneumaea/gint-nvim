@@ -1,5 +1,4 @@
 local tables = require("utils.tables")
-local nvim_utils = require("utils.nvim")
 local file_utils = require("utils.files")
 local git_utils = require("utils.git")
 
@@ -26,7 +25,7 @@ local function get_git_status()
 end
 
 function M.stage_line()
-  local line = nvim_utils.get_current_line()
+  local line = vim.api.nvim_get_current_line()
 
   local file_name = file_utils.get_file_name(line)
   if file_name == nil then
